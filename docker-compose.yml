@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  mariadb:
+    image: mariadb:10.6
+    container_name: coderank-mariadb
+    restart: always
+    env_file:
+      - ./coderank-api/.env
+    entrypoint:
+      - bash
+      - -c
+      - "export MARIADB_ROOT_PASSWORD=$$DB_MARIADB_PASSWORD && export MARIADB_DATABASE=$$DB_MARIADB_NAME && exec docker-entrypoint.sh mysqld"
+    ports:
+      - "3306:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+
+  redis:
+    image: redis:7-alpine
+    container_name: coderank-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  ollama:
+    image: ollama/ollama
+    container_name: coderank-ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+
+  coderank-api:
+    build:
+      context: ./coderank-api
+      dockerfile: Dockerfile
+    container_name: coderank-api
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - ./coderank-api/.env
+    environment:
+      - APP_HOST=0.0.0.0
+      - DB_MARIADB_HOST=mariadb
+      - REDIS_HOST=redis
+      - CLIENT_URL=http://localhost:4200
+      - AGENT_URL=http://coderank-agent:4000
+    depends_on:
+      - mariadb
+      - redis
+
+  coderank-agent:
+    build:
+      context: ./coderank-agent-v1
+      dockerfile: Dockerfile
+    container_name: coderank-agent
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    env_file:
+      - ./coderank-agent-v1/.env
+    environment:
+      - NESTJS_API_URL=http://coderank-api:3000/api
+      - OLLAMA_HOST=http://ollama:11434
+    depends_on:
+      - coderank-api
+      - ollama
+
+  coderank-client:
+    build:
+      context: ./coderank-client
+      dockerfile: Dockerfile
+    container_name: coderank-client
+    restart: unless-stopped
+    ports:
+      - "4200:4200"
+    depends_on:
+      - coderank-api
+
+volumes:
+  mariadb_data:
+  redis_data:
+  ollama_data:
