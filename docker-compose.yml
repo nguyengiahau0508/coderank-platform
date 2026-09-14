@@ -56,14 +56,14 @@ services:
 
   coderank-agent:
     build:
-      context: ./coderank-agent-v1
+      context: ./coderank-agent-v2
       dockerfile: Dockerfile
     container_name: coderank-agent
     restart: unless-stopped
     ports:
       - "4000:4000"
     env_file:
-      - ./coderank-agent-v1/.env
+      - ./coderank-agent-v2/.env
     environment:
       - NESTJS_API_URL=http://coderank-api:3000/api
       - OLLAMA_HOST=http://ollama:11434

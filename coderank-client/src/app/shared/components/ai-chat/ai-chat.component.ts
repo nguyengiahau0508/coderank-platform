@@ -96,8 +96,14 @@ export class AiChatComponent {
   activeProvider = signal<AiProviderEnum | null>(null);
   isSavingConfig = signal(false);
 
+  // Quick switcher & in-chat config state
+  showModelQuickSelect = signal(false);
+  showApiKey = signal(false);
+  configSuccessMsg = signal('');
+  configErrorMsg = signal('');
+
   // Editing provider state
-  editingProvider = signal<AiProviderEnum | null>(null);
+  editingProvider = signal<AiProviderEnum>(AiProviderEnum.Gemini);
   editModel = signal<string>('');
   editApiKey = signal<string>('');
   editBaseHost = signal<string>('');
@@ -544,45 +550,98 @@ export class AiChatComponent {
   }
 
   openAiSettings() {
-    const role = this.authService.getPrimaryRole();
-    if (role === 'admin') {
-      this.router.navigate(['/admin/settings']);
-      return;
+    this.configSuccessMsg.set('');
+    this.configErrorMsg.set('');
+    this.showModelQuickSelect.set(false);
+    const initial = this.activeProvider() || AiProviderEnum.Gemini;
+    this.selectConfigProvider(initial);
+    this.showConfig.set(true);
+  }
+
+  closeAiSettings() {
+    this.showConfig.set(false);
+    this.configSuccessMsg.set('');
+    this.configErrorMsg.set('');
+    this.showModelQuickSelect.set(false);
+  }
+
+  toggleModelQuickSelect() {
+    this.showModelQuickSelect.update((v) => !v);
+  }
+
+  selectQuickProvider(provider: AiProviderEnum) {
+    if (this.isProviderConfigured(provider)) {
+      this.setActiveProvider(provider);
+      this.showModelQuickSelect.set(false);
+    } else {
+      this.showModelQuickSelect.set(false);
+      this.openEditProvider(provider);
     }
-    if (role === 'instructor') {
-      this.router.navigate(['/lecturer/settings']);
-      return;
+  }
+
+  selectConfigProvider(provider: AiProviderEnum) {
+    this.editingProvider.set(provider);
+    this.configSuccessMsg.set('');
+    this.configErrorMsg.set('');
+    this.showApiKey.set(false);
+    const existing = this.providerConfigs().find((c) => c.provider === provider);
+    const models = this.getProviderModels(provider);
+    this.editModel.set(existing?.modelName || models[0] || '');
+    this.editApiKey.set('');
+    this.editBaseHost.set(
+      existing?.baseHost || (provider === AiProviderEnum.Ollama ? 'http://localhost:11434' : ''),
+    );
+  }
+
+  getProviderDocUrl(provider: AiProviderEnum): string {
+    switch (provider) {
+      case AiProviderEnum.Gemini:
+        return 'https://aistudio.google.com/app/apikey';
+      case AiProviderEnum.OpenAI:
+        return 'https://platform.openai.com/api-keys';
+      case AiProviderEnum.Anthropic:
+        return 'https://console.anthropic.com/settings/keys';
+      case AiProviderEnum.Groq:
+        return 'https://console.groq.com/keys';
+      case AiProviderEnum.Ollama:
+        return 'https://ollama.com/download';
+      default:
+        return '';
     }
-    this.router.navigate(['/student/settings']);
   }
 
   openEditProvider(provider: AiProviderEnum, event?: Event) {
     event?.stopPropagation();
-    this.editingProvider.set(provider);
-    const existing = this.providerConfigs().find(c => c.provider === provider);
-    const models = this.getProviderModels(provider);
-    this.editModel.set(existing?.modelName || models[0] || '');
-    this.editApiKey.set('');
-    this.editBaseHost.set(existing?.baseHost || '');
+    this.selectConfigProvider(provider);
+    this.showConfig.set(true);
   }
 
   saveProviderConfig() {
     const provider = this.editingProvider();
     if (!provider) return;
 
+    const model = this.editModel().trim();
+    if (!model) {
+      this.configErrorMsg.set('Vui lòng chọn hoặc nhập Model.');
+      return;
+    }
+
     this.isSavingConfig.set(true);
+    this.configSuccessMsg.set('');
+    this.configErrorMsg.set('');
+
     const dto = {
       provider,
-      modelName: this.editModel() || undefined,
-      apiKey: this.editApiKey() || undefined,
-      baseHost: this.editBaseHost() || undefined,
+      modelName: model,
+      apiKey: this.editApiKey().trim() || undefined,
+      baseHost: this.editBaseHost().trim() || undefined,
     };
 
     this.agentApi.upsertConfig(dto).subscribe({
       next: (response) => {
         const saved = response.data!;
-        this.providerConfigs.update(configs => {
-          const idx = configs.findIndex(c => c.provider === provider);
+        this.providerConfigs.update((configs) => {
+          const idx = configs.findIndex((c) => c.provider === provider);
           if (idx >= 0) {
             const updated = [...configs];
             updated[idx] = saved;
@@ -590,28 +649,44 @@ export class AiChatComponent {
           }
           return [...configs, saved];
         });
-        if (!this.activeProvider()) {
-          this.setActiveProvider(provider);
-        }
-        this.editingProvider.set(null);
+        this.setActiveProvider(provider);
         this.isSavingConfig.set(false);
+        this.configSuccessMsg.set(
+          `Đã lưu cấu hình cho ${this.getProviderMeta(provider).label} thành công!`,
+        );
+        this.editApiKey.set('');
       },
-      error: () => this.isSavingConfig.set(false),
+      error: (err) => {
+        this.isSavingConfig.set(false);
+        this.configErrorMsg.set(
+          err?.error?.error || 'Lỗi khi lưu cấu hình. Vui lòng kiểm tra lại.',
+        );
+      },
     });
   }
 
   deleteProviderConfig(provider: AiProviderEnum, event?: Event) {
     event?.stopPropagation();
+    this.configSuccessMsg.set('');
+    this.configErrorMsg.set('');
     this.agentApi.deleteConfig(provider).subscribe({
       next: () => {
-        this.providerConfigs.update(configs => configs.filter(c => c.provider !== provider));
+        this.providerConfigs.update((configs) =>
+          configs.filter((c) => c.provider !== provider),
+        );
         if (this.activeProvider() === provider) {
           const remaining = this.providerConfigs();
-          this.setActiveProvider(remaining.length > 0 ? remaining[0].provider : null);
+          this.setActiveProvider(
+            remaining.length > 0 ? remaining[0].provider : null,
+          );
         }
-        if (this.editingProvider() === provider) {
-          this.editingProvider.set(null);
-        }
+        this.configSuccessMsg.set(
+          `Đã xóa cấu hình ${this.getProviderMeta(provider).label}.`,
+        );
+        this.selectConfigProvider(provider);
+      },
+      error: (err) => {
+        this.configErrorMsg.set(err?.error?.error || 'Không thể xóa cấu hình.');
       },
     });
   }

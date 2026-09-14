@@ -116,165 +116,658 @@
             (click)="openAiSettings()"
             class="settings-btn w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm transition-all cursor-pointer"
           >
-            <i class="pi pi-cog text-sm"></i>
-            <span class="flex-1 text-left">AI Settings</span>
+            <i class="pi pi-sliders-h text-sm"></i>
+            <span class="flex-1 text-left font-medium">Cấu hình AI</span>
             @if (!activeProviderConfigured()) {
-              <span class="status-dot w-2 h-2 rounded-full" style="background: var(--cr-accent-yellow);"></span>
+              <span class="status-dot w-2 h-2 rounded-full" style="background: var(--cr-accent-yellow);" title="Chưa cấu hình"></span>
+            } @else {
+              <span class="status-dot w-2 h-2 rounded-full" style="background: var(--cr-accent-green);" title="Đã kết nối"></span>
             }
           </button>
         </div>
       </aside>
     }
 
-    <!-- ====== Main Chat Area ====== -->
-    <main class="chat-main flex-1 flex flex-col min-w-0">
-      <!-- Top bar -->
-      <header class="chat-header flex items-center justify-between px-4 py-2.5 border-b shrink-0">
-        <div class="flex items-center gap-2">
-          @if (!sidebarOpen() && chatSize() !== 'mini') {
+    <!-- ====== Integrated In-Popup AI Management Panel ====== -->
+    @if (showConfig()) {
+      <section class="chat-config-view flex-1 flex flex-col min-w-0 overflow-hidden animate-fade-in"
+        style="background: var(--cr-bg-secondary);"
+      >
+        <!-- Config view header -->
+        <header class="config-view-header flex items-center justify-between px-4 py-3 border-b shrink-0"
+          style="border-color: var(--cr-border-light); background: var(--cr-bg-primary);"
+        >
+          <div class="flex items-center gap-2.5">
             <button
-              (click)="sidebarOpen.set(true)"
-              class="header-btn w-8 h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer"
-              title="Show sidebar"
+              (click)="closeAiSettings()"
+              class="header-btn px-2.5 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+              style="background: var(--cr-bg-tertiary);"
+              title="Quay lại chat"
             >
-              <i class="pi pi-bars text-sm"></i>
+              <i class="pi pi-arrow-left text-xs"></i>
+              <span>Quay lại</span>
             </button>
-          }
-          @if (chatSize() === 'mini') {
-            <button
-              (click)="newChat()"
-              class="header-btn w-8 h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer"
-              title="New chat"
-            >
-              <i class="pi pi-plus text-sm"></i>
-            </button>
-          }
-          <!-- Model selector -->
-          @if (activeProvider()) {
-            <button
-              (click)="openAiSettings()"
-              class="model-badge flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all cursor-pointer"
-            >
-              <i
-                [class]="getProviderMeta(activeProvider()!).icon + ' text-xs'"
-                [style.color]="getProviderMeta(activeProvider()!).color"
-              ></i>
-              <span class="text-sm font-medium" style="color: var(--cr-text-primary);">
-                {{ getProviderModel(activeProvider()!) || getProviderMeta(activeProvider()!).label }}
-              </span>
-              <i class="pi pi-chevron-down text-[10px]" style="color: var(--cr-text-muted);"></i>
-            </button>
-          } @else {
-            <button
-              (click)="openAiSettings()"
-              class="model-badge flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all cursor-pointer"
-            >
-              <i class="pi pi-sparkles text-xs" style="color: var(--cr-accent-purple);"></i>
-              <span class="text-sm font-medium" style="color: var(--cr-text-secondary);">Select Model</span>
-              <i class="pi pi-chevron-down text-[10px]" style="color: var(--cr-text-muted);"></i>
-            </button>
-          }
-        </div>
-        <div class="flex items-center gap-1">
-          <!-- Size mode buttons -->
-          <div class="size-toggle flex items-center gap-0.5 p-0.5 rounded-lg mr-1">
-            <button
-              (click)="setSize('mini')"
-              class="size-btn w-7 h-7 rounded-md flex items-center justify-center transition-all cursor-pointer"
-              [class.active]="chatSize() === 'mini'"
-              title="Mini"
-            >
-              <i class="pi pi-minus text-xs"></i>
-            </button>
-            <button
-              (click)="setSize('resizable')"
-              class="size-btn w-7 h-7 rounded-md flex items-center justify-center transition-all cursor-pointer"
-              [class.active]="chatSize() === 'resizable'"
-              title="Resizable"
-            >
-              <i class="pi pi-stop text-xs"></i>
-            </button>
-            <button
-              (click)="setSize('maximum')"
-              class="size-btn w-7 h-7 rounded-md flex items-center justify-center transition-all cursor-pointer"
-              [class.active]="chatSize() === 'maximum'"
-              title="Maximum"
-            >
-              <i class="pi pi-window-maximize text-xs"></i>
-            </button>
+            <div class="h-4 w-[1px] bg-[var(--cr-border)]"></div>
+            <div class="flex items-center gap-2">
+              <i class="pi pi-sliders-h text-sm text-[var(--cr-accent-blue)]"></i>
+              <h2 class="text-sm font-bold text-[var(--cr-text-primary)]">Cấu hình AI & Mô hình</h2>
+            </div>
           </div>
           <button
-            (click)="close()"
+            (click)="closeAiSettings()"
             class="header-btn w-8 h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer"
-            title="Close"
+            title="Đóng"
           >
             <i class="pi pi-times text-sm"></i>
           </button>
-        </div>
-      </header>
+        </header>
 
-      <!-- Warning: no provider -->
-      @if (!activeProviderConfigured()) {
-        <div
-          class="setup-banner px-4 py-2.5 flex items-center gap-2.5 shrink-0 cursor-pointer transition-all"
-          (click)="openAiSettings()"
-        >
-          <i class="pi pi-info-circle text-sm"></i>
-          <span class="text-sm flex-1">Go to Settings to configure an AI provider</span>
-          <i class="pi pi-arrow-right text-xs"></i>
-        </div>
-      }
-
-      <!-- Messages area -->
-      <div
-        #messagesContainer
-        (click)="onMessagesClick($event)"
-        class="chat-messages flex-1 overflow-y-auto thin-scrollbar"
-      >
-        <!-- Welcome screen (centered input style) -->
-        @if (messages().length === 0 && !isStreaming()) {
-          <div class="welcome-container flex flex-col h-full"
-            [class.justify-center]="chatSize() !== 'mini'"
-            [class.justify-start]="chatSize() === 'mini'"
-            [class.pt-8]="chatSize() === 'mini'"
-          >
-            <div class="flex flex-col items-center text-center px-6"
-              [class.mb-8]="chatSize() === 'maximum'"
-              [class.mb-4]="chatSize() !== 'maximum'"
+        <!-- Scrollable Config Body -->
+        <div class="flex-1 overflow-y-auto thin-scrollbar p-4 space-y-4">
+          <!-- Feedback alert messages -->
+          @if (configSuccessMsg()) {
+            <div class="rounded-xl px-3.5 py-2.5 text-xs font-medium flex items-center gap-2 animate-fade-in"
+              style="background: rgba(63, 185, 80, 0.15); color: var(--cr-accent-green); border: 1px solid rgba(63, 185, 80, 0.3);"
             >
-              <div class="welcome-icon rounded-2xl flex items-center justify-center mb-5"
-                [class.w-16]="chatSize() === 'mini'"
-                [class.h-16]="chatSize() === 'mini'"
-                [class.w-20]="chatSize() !== 'mini'"
-                [class.h-20]="chatSize() !== 'mini'"
-              >
-                <i class="pi pi-sparkles text-white"
-                  [class.text-2xl]="chatSize() === 'mini'"
-                  [class.text-3xl]="chatSize() !== 'mini'"
-                ></i>
-              </div>
-              <h2 class="welcome-title font-semibold mb-2"
-                [class.text-lg]="chatSize() === 'mini'"
-                [class.text-2xl]="chatSize() !== 'mini'"
-              >
-                How can I help you?
-              </h2>
-              @if (chatSize() !== 'mini') {
-                <p class="welcome-subtitle text-sm max-w-md">
-                  I'm your AI coding assistant. Ask me about algorithms, debug code, or get help with programming concepts.
+              <i class="pi pi-check-circle text-sm shrink-0"></i>
+              <span class="flex-1">{{ configSuccessMsg() }}</span>
+              <button (click)="configSuccessMsg.set('')" class="cursor-pointer hover:opacity-80">
+                <i class="pi pi-times text-xs"></i>
+              </button>
+            </div>
+          }
+          @if (configErrorMsg()) {
+            <div class="rounded-xl px-3.5 py-2.5 text-xs font-medium flex items-center gap-2 animate-fade-in"
+              style="background: rgba(248, 81, 73, 0.15); color: var(--cr-accent-red); border: 1px solid rgba(248, 81, 73, 0.3);"
+            >
+              <i class="pi pi-exclamation-circle text-sm shrink-0"></i>
+              <span class="flex-1">{{ configErrorMsg() }}</span>
+              <button (click)="configErrorMsg.set('')" class="cursor-pointer hover:opacity-80">
+                <i class="pi pi-times text-xs"></i>
+              </button>
+            </div>
+          }
+
+          <!-- Context preference toggle card -->
+          <div class="context-pref-card p-3.5 rounded-2xl border transition-all"
+            style="background: var(--cr-bg-tertiary); border-color: var(--cr-border);"
+          >
+            <div class="flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <div class="flex items-center gap-2 mb-0.5">
+                  <i class="pi pi-book text-xs text-[var(--cr-accent-purple)]"></i>
+                  <p class="text-xs font-semibold text-[var(--cr-text-primary)]">Ngữ cảnh bài tập & code</p>
+                </div>
+                <p class="text-[11px] text-[var(--cr-text-muted)]">
+                  Tự động đính kèm mã code và bài tập hiện tại khi bạn chat với AI.
                 </p>
+              </div>
+              <button
+                type="button"
+                (click)="toggleContext()"
+                class="shrink-0 px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer"
+                [style]="includeContext() ? 'background: var(--cr-accent-green); color: white;' : 'background: var(--cr-bg-elevated); color: var(--cr-text-secondary); border: 1px solid var(--cr-border);'"
+              >
+                {{ includeContext() ? '✓ Đang bật' : 'Tắt' }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Provider selection cards -->
+          <div>
+            <div class="flex items-center justify-between mb-2">
+              <label class="text-xs font-semibold text-[var(--cr-text-secondary)] uppercase tracking-wider">
+                Chọn AI Provider
+              </label>
+              <span class="text-[11px] text-[var(--cr-text-muted)]">5 providers</span>
+            </div>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              @for (provider of providers; track provider) {
+                <div
+                  (click)="selectConfigProvider(provider)"
+                  class="provider-tile p-3 rounded-xl border transition-all cursor-pointer relative"
+                  [class.active]="editingProvider() === provider"
+                  [style.border-color]="editingProvider() === provider ? getProviderMeta(provider).color : 'var(--cr-border)'"
+                  [style.background]="editingProvider() === provider ? 'var(--cr-bg-elevated)' : 'var(--cr-bg-tertiary)'"
+                >
+                  <div class="flex items-center justify-between mb-1.5">
+                    <div class="flex items-center gap-2">
+                      <i [class]="getProviderMeta(provider).icon + ' text-base'" [style.color]="getProviderMeta(provider).color"></i>
+                      <span class="text-xs font-bold text-[var(--cr-text-primary)]">{{ getProviderMeta(provider).label }}</span>
+                    </div>
+                    @if (activeProvider() === provider) {
+                      <span class="text-[9px] font-semibold px-1.5 py-0.5 rounded-full bg-[rgba(88,166,255,0.15)] text-[var(--cr-accent-blue)]">
+                        Đang dùng
+                      </span>
+                    }
+                  </div>
+                  <div class="text-[11px] flex items-center gap-1.5">
+                    @if (isProviderConfigured(provider)) {
+                      <span class="w-1.5 h-1.5 rounded-full bg-[var(--cr-accent-green)]"></span>
+                      <span class="text-[var(--cr-accent-green)] truncate font-medium">{{ getProviderModel(provider) || 'Đã kết nối' }}</span>
+                    } @else {
+                      <span class="w-1.5 h-1.5 rounded-full bg-[var(--cr-text-subtle)]"></span>
+                      <span class="text-[var(--cr-text-muted)]">Chưa cấu hình</span>
+                    }
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+
+          <!-- Configuration Form for selected provider -->
+          <div class="config-detail-form p-4 rounded-2xl border space-y-3.5"
+            style="background: var(--cr-bg-tertiary); border-color: var(--cr-border);"
+          >
+            <!-- Provider header & doc link -->
+            <div class="flex items-center justify-between pb-2 border-b border-[var(--cr-border-light)]">
+              <div class="flex items-center gap-2">
+                <i [class]="getProviderMeta(editingProvider()).icon" [style.color]="getProviderMeta(editingProvider()).color"></i>
+                <span class="text-xs font-bold text-[var(--cr-text-primary)]">
+                  Cấu hình {{ getProviderMeta(editingProvider()).label }}
+                </span>
+                @if (isProviderConfigured(editingProvider())) {
+                  <span class="text-[10px] px-2 py-0.5 rounded-full bg-[rgba(63,185,80,0.15)] text-[var(--cr-accent-green)] font-medium">
+                    Đã lưu khóa API
+                  </span>
+                }
+              </div>
+              @if (getProviderDocUrl(editingProvider())) {
+                <a
+                  [href]="getProviderDocUrl(editingProvider())"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  class="text-[11px] text-[var(--cr-accent-blue)] hover:underline flex items-center gap-1"
+                >
+                  <span>Lấy API Key</span>
+                  <i class="pi pi-external-link text-[9px]"></i>
+                </a>
               }
             </div>
 
-            <!-- Centered input for welcome -->
-            <div class="welcome-input-wrapper px-4"
-              [class.max-w-2xl]="chatSize() === 'maximum'"
-              [class.mx-auto]="chatSize() === 'maximum'"
-              [class.w-full]="chatSize() === 'maximum'"
+            <!-- Model Selection -->
+            <div>
+              <label class="block text-[11px] font-semibold text-[var(--cr-text-secondary)] mb-1">
+                Model LLM
+              </label>
+              <div class="flex gap-2">
+                <select
+                  [(ngModel)]="editModel"
+                  class="flex-1 px-3 py-2 rounded-xl text-xs outline-none border transition-all"
+                  style="background: var(--cr-bg-elevated); border-color: var(--cr-border); color: var(--cr-text-primary);"
+                >
+                  @for (model of getProviderModels(editingProvider()); track model) {
+                    <option [value]="model">
+                      {{ model }}{{ isCustomModel(editingProvider(), model) ? ' ✦ (Tự thêm)' : '' }}
+                    </option>
+                  }
+                </select>
+                <button
+                  type="button"
+                  (click)="openAddModel()"
+                  class="px-2.5 py-2 rounded-xl text-xs font-medium flex items-center gap-1 border transition-all cursor-pointer shrink-0"
+                  style="background: var(--cr-bg-elevated); border-color: var(--cr-border); color: var(--cr-text-secondary);"
+                  title="Thêm model tùy chỉnh"
+                >
+                  <i class="pi pi-plus text-[10px]"></i>
+                  <span>Thêm Model</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- Custom Model Quick Input (if open) -->
+            @if (showAddModel()) {
+              <div class="p-2.5 rounded-xl border space-y-2 animate-fade-in"
+                style="background: var(--cr-bg-elevated); border-color: var(--cr-border);"
+              >
+                <div class="flex items-center justify-between text-[11px] text-[var(--cr-text-muted)]">
+                  <span>Nhập tên model (ví dụ: deepseek-r1, qwen2.5:32b, gpt-4.5)</span>
+                  <button (click)="closeAddModel()" class="text-[var(--cr-text-muted)] hover:text-[var(--cr-text-primary)]">
+                    <i class="pi pi-times text-[10px]"></i>
+                  </button>
+                </div>
+                <div class="flex gap-2">
+                  <input
+                    type="text"
+                    [(ngModel)]="newModelName"
+                    (keydown.enter)="addNewModel()"
+                    placeholder="Tên model mới..."
+                    class="flex-1 px-3 py-1.5 rounded-lg text-xs outline-none border"
+                    style="background: var(--cr-bg-tertiary); border-color: var(--cr-border); color: var(--cr-text-primary);"
+                  />
+                  <button
+                    type="button"
+                    (click)="addNewModel()"
+                    class="px-3 py-1.5 rounded-lg text-xs font-semibold text-white cursor-pointer"
+                    style="background: var(--cr-accent-blue);"
+                  >
+                    Thêm
+                  </button>
+                </div>
+              </div>
+            }
+
+            <!-- List of custom models with delete option -->
+            @for (model of getProviderModels(editingProvider()); track model) {
+              @if (isCustomModel(editingProvider(), model)) {
+                <div class="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] mr-1.5 mb-1"
+                  style="background: var(--cr-bg-elevated); border: 1px solid var(--cr-border); color: var(--cr-text-secondary);"
+                >
+                  <span>✦ {{ model }}</span>
+                  <button (click)="removeModel(model)" class="text-[var(--cr-accent-red)] hover:opacity-80 ml-1 cursor-pointer" title="Xóa model này">
+                    <i class="pi pi-times text-[8px]"></i>
+                  </button>
+                </div>
+              }
+            }
+
+            <!-- API Key Input -->
+            <div>
+              <label class="block text-[11px] font-semibold text-[var(--cr-text-secondary)] mb-1">
+                API Key @if (editingProvider() === 'ollama') { (Không bắt buộc với Ollama local) }
+              </label>
+              <div class="relative flex items-center">
+                <input
+                  [type]="showApiKey() ? 'text' : 'password'"
+                  [(ngModel)]="editApiKey"
+                  [placeholder]="isProviderConfigured(editingProvider()) ? '•••••••••••••••• (Đã lưu, nhập lại nếu muốn đổi)' : 'Nhập API key...'"
+                  class="w-full px-3 py-2 pr-9 rounded-xl text-xs outline-none border transition-all"
+                  style="background: var(--cr-bg-elevated); border-color: var(--cr-border); color: var(--cr-text-primary);"
+                />
+                <button
+                  type="button"
+                  (click)="showApiKey.set(!showApiKey())"
+                  class="absolute right-2.5 text-[var(--cr-text-muted)] hover:text-[var(--cr-text-primary)] cursor-pointer"
+                  title="Ẩn/Hiện API Key"
+                >
+                  <i [class]="showApiKey() ? 'pi pi-eye-slash text-xs' : 'pi pi-eye text-xs'"></i>
+                </button>
+              </div>
+            </div>
+
+            <!-- Base Host / Endpoint URL Input -->
+            <div>
+              <label class="block text-[11px] font-semibold text-[var(--cr-text-secondary)] mb-1">
+                Base Host / API Endpoint URL
+              </label>
+              <input
+                type="text"
+                [(ngModel)]="editBaseHost"
+                [placeholder]="editingProvider() === 'ollama' ? 'http://localhost:11434 (Mặc định local)' : 'Mặc định nhà cung cấp (hoặc proxy)'"
+                class="w-full px-3 py-2 rounded-xl text-xs outline-none border transition-all"
+                style="background: var(--cr-bg-elevated); border-color: var(--cr-border); color: var(--cr-text-primary);"
+              />
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex items-center justify-between pt-2 border-t border-[var(--cr-border-light)] gap-2">
+              <div class="flex items-center gap-2">
+                <button
+                  type="button"
+                  (click)="saveProviderConfig()"
+                  [disabled]="isSavingConfig()"
+                  class="save-btn px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  @if (isSavingConfig()) {
+                    <i class="pi pi-spin pi-spinner text-xs"></i>
+                    <span>Đang lưu...</span>
+                  } @else {
+                    <i class="pi pi-check text-xs"></i>
+                    <span>Lưu & Sử dụng</span>
+                  }
+                </button>
+                @if (isProviderConfigured(editingProvider())) {
+                  <button
+                    type="button"
+                    (click)="deleteProviderConfig(editingProvider())"
+                    class="px-3 py-2 rounded-xl text-xs font-medium text-[var(--cr-accent-red)] hover:bg-[rgba(248,81,73,0.1)] border border-[rgba(248,81,73,0.2)] transition-all cursor-pointer"
+                    title="Xóa cấu hình của provider này"
+                  >
+                    <i class="pi pi-trash text-xs"></i>
+                    <span class="ml-1">Xóa</span>
+                  </button>
+                }
+              </div>
+              <button
+                type="button"
+                (click)="closeAiSettings()"
+                class="cancel-btn px-3 py-2 rounded-xl text-xs font-medium cursor-pointer"
+              >
+                Xong
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    } @else {
+      <!-- ====== Main Chat Area ====== -->
+      <main class="chat-main flex-1 flex flex-col min-w-0 relative">
+        <!-- Top bar -->
+        <header class="chat-header flex items-center justify-between px-4 py-2.5 border-b shrink-0 relative">
+          <div class="flex items-center gap-2">
+            @if (!sidebarOpen() && chatSize() !== 'mini') {
+              <button
+                (click)="sidebarOpen.set(true)"
+                class="header-btn w-8 h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer"
+                title="Show sidebar"
+              >
+                <i class="pi pi-bars text-sm"></i>
+              </button>
+            }
+            @if (chatSize() === 'mini') {
+              <button
+                (click)="newChat()"
+                class="header-btn w-8 h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer"
+                title="New chat"
+              >
+                <i class="pi pi-plus text-sm"></i>
+              </button>
+            }
+            <!-- Model selector with dropdown popover trigger -->
+            <div class="relative">
+              @if (activeProvider()) {
+                <button
+                  (click)="toggleModelQuickSelect()"
+                  class="model-badge flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all cursor-pointer"
+                  title="Chọn nhanh model hoặc cấu hình AI"
+                >
+                  <i
+                    [class]="getProviderMeta(activeProvider()!).icon + ' text-xs'"
+                    [style.color]="getProviderMeta(activeProvider()!).color"
+                  ></i>
+                  <span class="text-sm font-medium" style="color: var(--cr-text-primary);">
+                    {{ getProviderModel(activeProvider()!) || getProviderMeta(activeProvider()!).label }}
+                  </span>
+                  <i class="pi pi-chevron-down text-[10px]" style="color: var(--cr-text-muted);"></i>
+                </button>
+              } @else {
+                <button
+                  (click)="openAiSettings()"
+                  class="model-badge flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all cursor-pointer"
+                  title="Thiết lập AI"
+                >
+                  <i class="pi pi-sparkles text-xs" style="color: var(--cr-accent-purple);"></i>
+                  <span class="text-sm font-medium" style="color: var(--cr-text-secondary);">Thiết lập AI</span>
+                  <i class="pi pi-chevron-down text-[10px]" style="color: var(--cr-text-muted);"></i>
+                </button>
+              }
+
+              <!-- Quick Model Switcher Popover -->
+              @if (showModelQuickSelect()) {
+                <div class="quick-model-popover absolute top-10 left-0 z-50 w-72 rounded-2xl p-2 shadow-2xl border animate-fade-in"
+                  style="background: var(--cr-bg-elevated); border-color: var(--cr-border);"
+                >
+                  <div class="px-2.5 py-1 text-[11px] font-semibold text-[var(--cr-text-muted)] flex items-center justify-between">
+                    <span>Chọn nhanh AI Provider</span>
+                    <button (click)="showModelQuickSelect.set(false)" class="text-[var(--cr-text-muted)] hover:text-[var(--cr-text-primary)] cursor-pointer">
+                      <i class="pi pi-times text-[10px]"></i>
+                    </button>
+                  </div>
+                  <div class="space-y-1 my-1">
+                    @for (provider of providers; track provider) {
+                      <button
+                        (click)="selectQuickProvider(provider)"
+                        class="quick-provider-item w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs transition-all cursor-pointer text-left"
+                        [class.active]="activeProvider() === provider"
+                        [style.background]="activeProvider() === provider ? 'rgba(88, 166, 255, 0.12)' : 'transparent'"
+                      >
+                        <div class="flex items-center gap-2.5 min-w-0">
+                          <i [class]="getProviderMeta(provider).icon" [style.color]="getProviderMeta(provider).color" class="text-sm shrink-0"></i>
+                          <div class="min-w-0">
+                            <div class="font-semibold text-[var(--cr-text-primary)] flex items-center gap-1.5">
+                              <span>{{ getProviderMeta(provider).label }}</span>
+                              @if (activeProvider() === provider) {
+                                <span class="w-1.5 h-1.5 rounded-full bg-[var(--cr-accent-blue)]"></span>
+                              }
+                            </div>
+                            <div class="text-[11px] text-[var(--cr-text-muted)] truncate">
+                              {{ isProviderConfigured(provider) ? (getProviderModel(provider) || 'Đã cấu hình') : 'Chưa cấu hình' }}
+                            </div>
+                          </div>
+                        </div>
+                        @if (isProviderConfigured(provider)) {
+                          <i class="pi pi-check text-[11px] text-[var(--cr-accent-green)]"></i>
+                        } @else {
+                          <span class="text-[10px] px-1.5 py-0.5 rounded bg-[var(--cr-bg-tertiary)] text-[var(--cr-text-muted)]">Cài đặt</span>
+                        }
+                      </button>
+                    }
+                  </div>
+                  <div class="border-t pt-1.5 mt-1 border-[var(--cr-border-light)]">
+                    <button
+                      (click)="openAiSettings()"
+                      class="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-xl text-xs font-semibold text-[var(--cr-accent-blue)] hover:bg-[var(--cr-bg-tertiary)] transition-all cursor-pointer"
+                    >
+                      <i class="pi pi-sliders-h text-xs"></i>
+                      <span>Quản lý tất cả Providers & API Keys...</span>
+                    </button>
+                  </div>
+                </div>
+              }
+            </div>
+          </div>
+          <div class="flex items-center gap-1">
+            <!-- Size mode buttons -->
+            <div class="size-toggle flex items-center gap-0.5 p-0.5 rounded-lg mr-1">
+              <button
+                (click)="setSize('mini')"
+                class="size-btn w-7 h-7 rounded-md flex items-center justify-center transition-all cursor-pointer"
+                [class.active]="chatSize() === 'mini'"
+                title="Mini"
+              >
+                <i class="pi pi-minus text-xs"></i>
+              </button>
+              <button
+                (click)="setSize('resizable')"
+                class="size-btn w-7 h-7 rounded-md flex items-center justify-center transition-all cursor-pointer"
+                [class.active]="chatSize() === 'resizable'"
+                title="Resizable"
+              >
+                <i class="pi pi-stop text-xs"></i>
+              </button>
+              <button
+                (click)="setSize('maximum')"
+                class="size-btn w-7 h-7 rounded-md flex items-center justify-center transition-all cursor-pointer"
+                [class.active]="chatSize() === 'maximum'"
+                title="Maximum"
+              >
+                <i class="pi pi-window-maximize text-xs"></i>
+              </button>
+            </div>
+            <button
+              (click)="close()"
+              class="header-btn w-8 h-8 rounded-lg flex items-center justify-center transition-all cursor-pointer"
+              title="Close"
             >
+              <i class="pi pi-times text-sm"></i>
+            </button>
+          </div>
+        </header>
+
+        <!-- Warning banner: no provider configured -->
+        @if (!activeProviderConfigured()) {
+          <div
+            class="setup-banner px-4 py-2.5 flex items-center gap-2.5 shrink-0 cursor-pointer transition-all"
+            (click)="openAiSettings()"
+          >
+            <i class="pi pi-info-circle text-sm"></i>
+            <span class="text-sm flex-1">Nhấp vào đây để cấu hình AI Provider (API Key, Model) trực tiếp</span>
+            <i class="pi pi-arrow-right text-xs"></i>
+          </div>
+        }
+
+        <!-- Messages area -->
+        <div
+          #messagesContainer
+          (click)="onMessagesClick($event)"
+          class="chat-messages flex-1 overflow-y-auto thin-scrollbar"
+        >
+          <!-- Welcome screen (centered input style) -->
+          @if (messages().length === 0 && !isStreaming()) {
+            <div class="welcome-container flex flex-col h-full"
+              [class.justify-center]="chatSize() !== 'mini'"
+              [class.justify-start]="chatSize() === 'mini'"
+              [class.pt-8]="chatSize() === 'mini'"
+            >
+              <div class="flex flex-col items-center text-center px-6"
+                [class.mb-8]="chatSize() === 'maximum'"
+                [class.mb-4]="chatSize() !== 'maximum'"
+              >
+                <div class="welcome-icon rounded-2xl flex items-center justify-center mb-5"
+                  [class.w-16]="chatSize() === 'mini'"
+                  [class.h-16]="chatSize() === 'mini'"
+                  [class.w-20]="chatSize() !== 'mini'"
+                  [class.h-20]="chatSize() !== 'mini'"
+                >
+                  <i class="pi pi-sparkles text-white"
+                    [class.text-2xl]="chatSize() === 'mini'"
+                    [class.text-3xl]="chatSize() !== 'mini'"
+                  ></i>
+                </div>
+                <h2 class="welcome-title font-semibold mb-2"
+                  [class.text-lg]="chatSize() === 'mini'"
+                  [class.text-2xl]="chatSize() !== 'mini'"
+                >
+                  How can I help you?
+                </h2>
+                @if (chatSize() !== 'mini') {
+                  <p class="welcome-subtitle text-sm max-w-md">
+                    I'm your AI coding assistant. Ask me about algorithms, debug code, or get help with programming concepts.
+                  </p>
+                }
+              </div>
+
+              <!-- Centered input for welcome -->
+              <div class="welcome-input-wrapper px-4"
+                [class.max-w-2xl]="chatSize() === 'maximum'"
+                [class.mx-auto]="chatSize() === 'maximum'"
+                [class.w-full]="chatSize() === 'maximum'"
+              >
+                <!-- Context toggle bar -->
+                @if (hasContext()) {
+                  <div class="flex items-center gap-2 mb-3 justify-center">
+                    <button
+                      (click)="toggleContext()"
+                      class="context-toggle flex items-center gap-2 px-3 py-1.5 rounded-full text-xs transition-all cursor-pointer"
+                      [class.active]="includeContext()"
+                    >
+                      <i class="pi" [class.pi-check-circle]="includeContext()" [class.pi-circle]="!includeContext()" style="font-size: 11px;"></i>
+                      <span>{{ contextSummary() }}</span>
+                    </button>
+                  </div>
+                }
+                <div class="welcome-input-box rounded-2xl border p-1 transition-all">
+                  <textarea
+                    #messageInput
+                    [(ngModel)]="inputMessage"
+                    (keydown.enter)="onEnterKey($event)"
+                    [placeholder]="activeProviderConfigured() ? 'Ask me anything...' : 'Configure a provider to start...'"
+                    [disabled]="!activeProviderConfigured() || isStreaming()"
+                    rows="1"
+                    class="welcome-textarea w-full bg-transparent outline-none resize-none text-sm px-4 py-3 disabled:opacity-50"
+                    [style.max-height]="chatSize() === 'mini' ? '100px' : '150px'"
+                    (input)="autoResize($event)"
+                  ></textarea>
+                  <div class="flex items-center justify-between px-3 pb-2">
+                    <div class="flex items-center gap-1">
+                      @for (q of quickQuestions.slice(0, chatSize() === 'mini' ? 2 : 4); track q) {
+                        <button
+                          (click)="sendQuick(q)"
+                          [disabled]="!activeProviderConfigured()"
+                          class="quick-btn px-2.5 py-1 rounded-lg text-xs transition-all cursor-pointer disabled:opacity-30"
+                        >
+                          {{ q }}
+                        </button>
+                      }
+                    </div>
+                    <button
+                      (click)="sendMessage()"
+                      [disabled]="isStreaming() || !inputMessage.trim() || !activeProviderConfigured()"
+                      class="send-btn w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer disabled:opacity-30"
+                    >
+                      @if (isStreaming()) {
+                        <i class="pi pi-spin pi-spinner text-sm"></i>
+                      } @else {
+                        <i class="pi pi-arrow-up text-sm"></i>
+                      }
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          } @else {
+            <!-- Message list -->
+            <div [class]="chatSize() === 'maximum' ? 'max-w-3xl mx-auto px-4 py-6' : 'px-3 py-4'">
+              <div class="space-y-5">
+                @for (msg of messages(); track msg.id) {
+                  <div class="message-row flex gap-3" [class.user-message]="msg.role === 'user'">
+                    <!-- Avatar -->
+                    <div class="message-avatar w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                      [class.ai-avatar]="msg.role === 'assistant'"
+                      [class.user-avatar]="msg.role === 'user'"
+                    >
+                      <i [class]="msg.role === 'assistant' ? 'pi pi-sparkles' : 'pi pi-user'" class="text-xs text-white"></i>
+                    </div>
+
+                    <!-- Content -->
+                    <div class="message-content flex-1 min-w-0">
+                      <div class="message-header text-xs mb-1" style="color: var(--cr-text-muted);">
+                        {{ msg.role === 'assistant' ? 'CodeRank AI' : 'You' }}
+                      </div>
+                      <div class="message-body text-sm leading-relaxed"
+                        [class.user-bubble]="msg.role === 'user'"
+                        style="color: var(--cr-text-primary);"
+                      >
+                        @if (msg.role === 'assistant') {
+                          <div class="chat-markdown" [innerHTML]="renderMarkdown(msg.content)"></div>
+                        } @else {
+                          <span class="whitespace-pre-wrap">{{ msg.content }}</span>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                }
+
+                <!-- Streaming assistant message -->
+                @if (isStreaming()) {
+                  <div class="message-row flex gap-3">
+                    <div class="message-avatar ai-avatar w-8 h-8 rounded-xl flex items-center justify-center shrink-0">
+                      <i class="pi pi-sparkles text-xs text-white"></i>
+                    </div>
+                    <div class="message-content flex-1 min-w-0">
+                      <div class="message-header text-xs mb-1" style="color: var(--cr-text-muted);">CodeRank AI</div>
+                      <div class="message-body text-sm leading-relaxed" style="color: var(--cr-text-primary);">
+                        @if (streamingStatus() && !streamingContent()) {
+                          <div class="streaming-status flex items-center gap-2">
+                            <span class="status-dot-pulse"></span>
+                            <span class="text-sm">{{ streamingStatus() }}</span>
+                          </div>
+                        } @else if (streamingContent()) {
+                          <div class="chat-markdown" [innerHTML]="renderMarkdown(streamingContent())"></div>
+                          <span class="typing-cursor"></span>
+                        } @else {
+                          <div class="thinking-indicator">
+                            <span></span><span></span><span></span>
+                          </div>
+                        }
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Input area (when messages exist) -->
+        @if (messages().length > 0 || isStreaming()) {
+          <div class="chat-input-area px-3 pb-3 pt-2 shrink-0"
+            [class.pb-4]="chatSize() === 'maximum'"
+          >
+            <div [class]="chatSize() === 'maximum' ? 'max-w-3xl mx-auto' : ''">
               <!-- Context toggle bar -->
               @if (hasContext()) {
-                <div class="flex items-center gap-2 mb-3 justify-center">
+                <div class="flex items-center gap-2 mb-2 px-1">
                   <button
                     (click)="toggleContext()"
                     class="context-toggle flex items-center gap-2 px-3 py-1.5 rounded-full text-xs transition-all cursor-pointer"
@@ -285,160 +778,39 @@
                   </button>
                 </div>
               }
-              <div class="welcome-input-box rounded-2xl border p-1 transition-all">
+              <div class="input-box flex items-end gap-2 rounded-2xl border px-3 py-2 transition-all">
                 <textarea
                   #messageInput
                   [(ngModel)]="inputMessage"
                   (keydown.enter)="onEnterKey($event)"
-                  [placeholder]="activeProviderConfigured() ? 'Ask me anything...' : 'Configure a provider to start...'"
+                  [placeholder]="activeProviderConfigured() ? 'Message CodeRank AI...' : 'Configure a provider...'"
                   [disabled]="!activeProviderConfigured() || isStreaming()"
                   rows="1"
-                  class="welcome-textarea w-full bg-transparent outline-none resize-none text-sm px-4 py-3 disabled:opacity-50"
-                  [style.max-height]="chatSize() === 'mini' ? '100px' : '150px'"
+                  class="input-textarea flex-1 bg-transparent outline-none resize-none text-sm disabled:opacity-50"
+                  [style.max-height]="chatSize() === 'mini' ? '80px' : '150px'"
                   (input)="autoResize($event)"
                 ></textarea>
-                <div class="flex items-center justify-between px-3 pb-2">
-                  <div class="flex items-center gap-1">
-                    @for (q of quickQuestions.slice(0, chatSize() === 'mini' ? 2 : 4); track q) {
-                      <button
-                        (click)="sendQuick(q)"
-                        [disabled]="!activeProviderConfigured()"
-                        class="quick-btn px-2.5 py-1 rounded-lg text-xs transition-all cursor-pointer disabled:opacity-30"
-                      >
-                        {{ q }}
-                      </button>
-                    }
-                  </div>
-                  <button
-                    (click)="sendMessage()"
-                    [disabled]="isStreaming() || !inputMessage.trim() || !activeProviderConfigured()"
-                    class="send-btn w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer disabled:opacity-30"
-                  >
-                    @if (isStreaming()) {
-                      <i class="pi pi-spin pi-spinner text-sm"></i>
-                    } @else {
-                      <i class="pi pi-arrow-up text-sm"></i>
-                    }
-                  </button>
-                </div>
+                <button
+                  (click)="sendMessage()"
+                  [disabled]="isStreaming() || !inputMessage.trim() || !activeProviderConfigured()"
+                  class="send-btn w-8 h-8 rounded-xl flex items-center justify-center transition-all shrink-0 cursor-pointer disabled:opacity-30"
+                >
+                  @if (isStreaming()) {
+                    <i class="pi pi-spin pi-spinner text-xs"></i>
+                  } @else {
+                    <i class="pi pi-arrow-up text-xs"></i>
+                  }
+                </button>
               </div>
-            </div>
-          </div>
-        } @else {
-          <!-- Message list -->
-          <div [class]="chatSize() === 'maximum' ? 'max-w-3xl mx-auto px-4 py-6' : 'px-3 py-4'">
-            <div class="space-y-5">
-              @for (msg of messages(); track msg.id) {
-                <div class="message-row flex gap-3" [class.user-message]="msg.role === 'user'">
-                  <!-- Avatar -->
-                  <div class="message-avatar w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
-                    [class.ai-avatar]="msg.role === 'assistant'"
-                    [class.user-avatar]="msg.role === 'user'"
-                  >
-                    <i [class]="msg.role === 'assistant' ? 'pi pi-sparkles' : 'pi pi-user'" class="text-xs text-white"></i>
-                  </div>
-
-                  <!-- Content -->
-                  <div class="message-content flex-1 min-w-0">
-                    <div class="message-header text-xs mb-1" style="color: var(--cr-text-muted);">
-                      {{ msg.role === 'assistant' ? 'CodeRank AI' : 'You' }}
-                    </div>
-                    <div class="message-body text-sm leading-relaxed"
-                      [class.user-bubble]="msg.role === 'user'"
-                      style="color: var(--cr-text-primary);"
-                    >
-                      @if (msg.role === 'assistant') {
-                        <div class="chat-markdown" [innerHTML]="renderMarkdown(msg.content)"></div>
-                      } @else {
-                        <span class="whitespace-pre-wrap">{{ msg.content }}</span>
-                      }
-                    </div>
-                  </div>
-                </div>
-              }
-
-              <!-- Streaming assistant message -->
-              @if (isStreaming()) {
-                <div class="message-row flex gap-3">
-                  <div class="message-avatar ai-avatar w-8 h-8 rounded-xl flex items-center justify-center shrink-0">
-                    <i class="pi pi-sparkles text-xs text-white"></i>
-                  </div>
-                  <div class="message-content flex-1 min-w-0">
-                    <div class="message-header text-xs mb-1" style="color: var(--cr-text-muted);">CodeRank AI</div>
-                    <div class="message-body text-sm leading-relaxed" style="color: var(--cr-text-primary);">
-                      @if (streamingStatus() && !streamingContent()) {
-                        <div class="streaming-status flex items-center gap-2">
-                          <span class="status-dot-pulse"></span>
-                          <span class="text-sm">{{ streamingStatus() }}</span>
-                        </div>
-                      } @else if (streamingContent()) {
-                        <div class="chat-markdown" [innerHTML]="renderMarkdown(streamingContent())"></div>
-                        <span class="typing-cursor"></span>
-                      } @else {
-                        <div class="thinking-indicator">
-                          <span></span><span></span><span></span>
-                        </div>
-                      }
-                    </div>
-                  </div>
-                </div>
+              @if (chatSize() === 'maximum') {
+                <p class="disclaimer text-xs text-center mt-2">
+                  AI can make mistakes. Verify important information.
+                </p>
               }
             </div>
           </div>
         }
-      </div>
-
-      <!-- Input area (when messages exist) -->
-      @if (messages().length > 0 || isStreaming()) {
-        <div class="chat-input-area px-3 pb-3 pt-2 shrink-0"
-          [class.pb-4]="chatSize() === 'maximum'"
-        >
-          <div [class]="chatSize() === 'maximum' ? 'max-w-3xl mx-auto' : ''">
-            <!-- Context toggle bar -->
-            @if (hasContext()) {
-              <div class="flex items-center gap-2 mb-2 px-1">
-                <button
-                  (click)="toggleContext()"
-                  class="context-toggle flex items-center gap-2 px-3 py-1.5 rounded-full text-xs transition-all cursor-pointer"
-                  [class.active]="includeContext()"
-                >
-                  <i class="pi" [class.pi-check-circle]="includeContext()" [class.pi-circle]="!includeContext()" style="font-size: 11px;"></i>
-                  <span>{{ contextSummary() }}</span>
-                </button>
-              </div>
-            }
-            <div class="input-box flex items-end gap-2 rounded-2xl border px-3 py-2 transition-all">
-              <textarea
-                #messageInput
-                [(ngModel)]="inputMessage"
-                (keydown.enter)="onEnterKey($event)"
-                [placeholder]="activeProviderConfigured() ? 'Message CodeRank AI...' : 'Configure a provider...'"
-                [disabled]="!activeProviderConfigured() || isStreaming()"
-                rows="1"
-                class="input-textarea flex-1 bg-transparent outline-none resize-none text-sm disabled:opacity-50"
-                [style.max-height]="chatSize() === 'mini' ? '80px' : '150px'"
-                (input)="autoResize($event)"
-              ></textarea>
-              <button
-                (click)="sendMessage()"
-                [disabled]="isStreaming() || !inputMessage.trim() || !activeProviderConfigured()"
-                class="send-btn w-8 h-8 rounded-xl flex items-center justify-center transition-all shrink-0 cursor-pointer disabled:opacity-30"
-              >
-                @if (isStreaming()) {
-                  <i class="pi pi-spin pi-spinner text-xs"></i>
-                } @else {
-                  <i class="pi pi-arrow-up text-xs"></i>
-                }
-              </button>
-            </div>
-            @if (chatSize() === 'maximum') {
-              <p class="disclaimer text-xs text-center mt-2">
-                AI can make mistakes. Verify important information.
-              </p>
-            }
-          </div>
-        </div>
-      }
-    </main>
+      </main>
+    }
   </div>
 }
